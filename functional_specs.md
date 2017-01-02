@@ -68,4 +68,4 @@ c<sub>V</sub>|Měrná tepelná kapacita vzduchu|0.72 kJ&times;kg<sup>-1</sup>&ti
 ![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?P=\frac{rpm}{2\times60}\times W)
 
 ## GUI
-
+![GUI](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/preview.png)
