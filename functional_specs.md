@@ -43,29 +43,29 @@ c<sub>V</sub>|Měrná tepelná kapacita vzduchu|0.72 kJ&times;kg<sup>-1</sup>&ti
 
 ## Rovnice
 #### Rovnice pro výpočet komresního poměru
-![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?r=\frac{V_{2}}{V_{3}})
+![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?r=\\frac{V_{2}}{V_{3}})
 
 #### Adiabatické rovnice
-![Adiabatická rovnice tlaku](http://latex.codecogs.com/svg.latex?\frac{p_{3}}{p_{2}}=r^{\gamma})
+![Adiabatická rovnice tlaku](http://latex.codecogs.com/svg.latex?\\frac{p_{3}}{p_{2}}=r^{\\gamma})
 
-![Adiabatická rovnice teploty](http://latex.codecogs.com/svg.latex?\frac{T_{3}}{T_{2}}=r^{\gamma-1})
+![Adiabatická rovnice teploty](http://latex.codecogs.com/svg.latex?\\frac{T_{3}}{T_{2}}=r^{\\gamma-1})
 
 #### Výhřevnost paliva
-![Výhřevnost paliva](http://latex.codecogs.com/svg.latex?T_{4}=T_{3}+\frac{Q}{f\times c_{v}})
+![Výhřevnost paliva](http://latex.codecogs.com/svg.latex?T_{4}=T_{3}+\\frac{Q}{f\\times c_{v}})
 
 #### Stavová isochorická rovnice
-![Stavová isochorická rovnice](http://latex.codecogs.com/svg.latex?\frac{p_{4}}{p_{3}}=\frac{T_{4}}{T_{3}})
+![Stavová isochorická rovnice](http://latex.codecogs.com/svg.latex?\\frac{p_{4}}{p_{3}}=\\frac{T_{4}}{T_{3}})
 
 #### Adiabatické rovnice
-![Adiabatická rovnice tlaku](http://latex.codecogs.com/svg.latex?\frac{p_{4}}{p_{5}}=r^{\gamma})
+![Adiabatická rovnice tlaku](http://latex.codecogs.com/svg.latex?\\frac{p_{4}}{p_{5}}=r^{\\gamma})
 
-![Adiabatická rovnice teploty](http://latex.codecogs.com/svg.latex?\frac{T_{4}}{T_{5}}=r^{\gamma-1})
+![Adiabatická rovnice teploty](http://latex.codecogs.com/svg.latex?\\frac{T_{4}}{T_{5}}=r^{\\gamma-1})
 
 #### Rovnice pro výpočet práce
-![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?W=c_{v}\times\rho_{vzduch}\times V_{2}\times[(T_{4}-T_{3})-(T_{5}-T_{2})])
+![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?W=c_{v}\\times\\rho_{vzduch}\\times V_{2}\\times[(T_{4}-T_{3})-(T_{5}-T_{2})])
 
 #### Rovnice pro výpočet výkonu
-![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?P=\frac{rpm}{2\times60}\times W)
+![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?P=\\frac{rpm}{2\\times60}\\times W)
 
 ## GUI
 ![GUI](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/preview.png)
