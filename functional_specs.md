@@ -38,7 +38,8 @@ Značka|popis|hodnota
 ---|---|---
 r|kompresní poměr|závisí na V<sub>2</sub> a V<sub>3</sub>
 &rho;<sub>vzduch</sub>|hustota vzduchu|1.29 kg&times;m<sup>3</sup>
-&gamma;|Poissonova konstana|vzduch = 1,4
+c<sub>V</sub>|Měrná tepelná kapacita vzduchu|0.72 kJ&times;kg<sup>-1</sup>&times;K<sup>-1</sup>
+&gamma;|Poissonova konstana|vzduch = 1,4    
 
 ## Rovnice
 #### Rovnice pro výpočet komresního poměru
