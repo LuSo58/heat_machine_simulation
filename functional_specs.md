@@ -1,5 +1,8 @@
 # Funkční specifikace
 
+## O tomto documentu
+Tento document obsahuje teoreický návrh programu pro vývojáře tohoto projektu a pro kantory SSPŠ pro hodnocení tohoto projektu.
+
 ## Start programu
  * Vytvořit GUI, připravit rederovací pole
  * Vyplnit výchozí hodnoty
