@@ -44,20 +44,20 @@ c<sub>V</sub>|Měrná tepelná kapacita vzduchu|0.72 kJ&times;kg<sup>-1</sup>&ti
 &gamma;|Poissonova konstanta|vzduch = 1,4    
 ## Rovnice
 #### Rovnice pro výpočet kompresního poměru
-![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?r=\\frac{V_{2}}{V_{3}})
+![Rovnice pro výpočet práce](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/svg_for_md/kompresni_pomer.svg)
 #### Adiabatické rovnice
-![Adiabatická rovnice tlaku](http://latex.codecogs.com/svg.latex?\\frac{p_{3}}{p_{2}}=r^{\\gamma})
-![Adiabatická rovnice teploty](http://latex.codecogs.com/svg.latex?\\frac{T_{3}}{T_{2}}=r^{\\gamma-1})
+![Adiabatická rovnice tlaku](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/svg_for_md/tlak1.svg)
+![Adiabatická rovnice teploty](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/svg_for_md/teplo1.svg)
 #### Výhřevnost paliva
-![Výhřevnost paliva](http://latex.codecogs.com/svg.latex?T_{4}=T_{3}+\\frac{Q}{f\\times c_{v}})
+![Výhřevnost paliva](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/svg_for_md/vyhrevnost.svg)
 #### Stavová isochorická rovnice
-![Stavová isochorická rovnice](http://latex.codecogs.com/svg.latex?\\frac{p_{4}}{p_{3}}=\\frac{T_{4}}{T_{3}})
+![Stavová isochorická rovnice](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/svg_for_md/isochor.svg)
 #### Adiabatické rovnice
-![Adiabatická rovnice tlaku](http://latex.codecogs.com/svg.latex?\\frac{p_{4}}{p_{5}}=r^{\\gamma})
-![Adiabatická rovnice teploty](http://latex.codecogs.com/svg.latex?\\frac{T_{4}}{T_{5}}=r^{\\gamma-1})
+![Adiabatická rovnice tlaku](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/svg_for_md/tlak2.svg)
+![Adiabatická rovnice teploty](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/svg_for_md/teplota2.svg)
 #### Rovnice pro výpočet práce
-![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?W=c_{v}\\times\\rho_{vzduch}\\times V_{2}\\times[(T_{4}-T_{3})-(T_{5}-T_{2})])
+![Rovnice pro výpočet práce](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/svg_for_md/prace.svg)
 #### Rovnice pro výpočet výkonu
-![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?P=\\frac{rpm}{2\\times60}\\times W)
+![Rovnice pro výpočet práce](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/svg_for_md/vykon.svg)
 ## GUI
 ![GUI](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/preview.png)
