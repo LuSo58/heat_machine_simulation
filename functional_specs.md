@@ -22,6 +22,8 @@ Tento dokument obsahuje teoretický návrh programu pro vývojáře tohoto proje
     * Ukončit animace
     * Vymazat závislé
     * Uvolnit vstupní pole
+    
+   
 ## Vstupní hodnoty
 Značka|popis|základní hodnota
 ---|---|---
