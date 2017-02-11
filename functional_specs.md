@@ -55,11 +55,11 @@ c<sub>V</sub>|Měrná tepelná kapacita vzduchu|0.72 kJ&times;kg<sup>-1</sup>&ti
 #### Stavová isochorická rovnice
 ![Stavová isochorická rovnice](http://latex.codecogs.com/svg.latex?\\frac{p_{4}}{p_{3}}=\\frac{T_{4}}{T_{3}})
 #### Adiabatické rovnice
-![Adiabatická rovnice tlaku](http://latex.codecogs.com/svg.latex?\\frac{p_{4}}{p_{5}}=r^{\\gamma})
-![Adiabatická rovnice teploty](http://latex.codecogs.com/svg.latex?\\frac{T_{4}}{T_{5}}=r^{\\gamma-1})
+![Adiabatická rovnice tlaku](http://latex.codecogs.com/svg.latex?\\frac{p_{5}}{p_{4}}=r^{-\\gamma})
+![Adiabatická rovnice teploty](http://latex.codecogs.com/svg.latex?\\frac{T_{5}}{T_{4}}=r^{1-\\gamma})
 #### Rovnice pro výpočet práce
-![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?W=c_{v}\\times\\rho_{vzduch}\\times V_{2}\\times[(T_{4}-T_{3})-(T_{5}-T_{2})])
+![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?W=c_{v}\\times\\rho_{vzduch}\\times V_{2}\\times[(T_{4}-T_{3})-(T_{5}-T_{2})]\\times\\eta)
 #### Rovnice pro výpočet výkonu
-![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?P=\\frac{rpm}{2\\times60}\\times W)
+![Rovnice pro výpočet práce](http://latex.codecogs.com/svg.latex?P=\\frac{rpm}{2\\times60}\\times W\\times n)
 ## GUI
 ![GUI](https://raw.githubusercontent.com/LuSo58/heat_machine_simulation/master/preview.png)
