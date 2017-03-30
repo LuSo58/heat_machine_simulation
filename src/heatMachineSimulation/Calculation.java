@@ -10,4 +10,6 @@ public class Calculation {
     public double pressure5;
     public double work;
     public double power;
+    public double[][] process23;
+    public double[][] process45;
 }

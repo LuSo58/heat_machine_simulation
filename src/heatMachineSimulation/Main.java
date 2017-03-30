@@ -13,7 +13,6 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
-//
 public class Main extends Application {
 
     public enum heatMachineInputs {
@@ -25,7 +24,6 @@ public class Main extends Application {
         AirFuelRatio,
         Rpm,
         CylinderCount,
-        Efficiency,
     }
     public static final double airHeatCapacity = 0.72;
     public static final double airDensity = 1.29;
@@ -40,7 +38,6 @@ public class Main extends Application {
             "f",
             "rpm",
             "n",
-            "η",
     };
     public static final double[] heatMachineInputsStartingValues = new double[]{
             625,
@@ -51,18 +48,16 @@ public class Main extends Application {
             50,
             2000,
             4,
-            0.4,
     };
     public static final double[] heatMachineInputsMin = new double[]{
-            500,
-            15,
+            100,
+            5,
             240,
             0.08,
             10000,
             15,
             600,
             1,
-            0.1,
     };
     public static final double[] heatMachineInputsMax = new double[]{
             2000,
@@ -73,7 +68,6 @@ public class Main extends Application {
             120,
             5000,
             14,
-            1,
     };
     public static final double[] heatMachineInputsSteps = new double[]{
             1,
@@ -84,9 +78,8 @@ public class Main extends Application {
             2,
             100,
             1,
-            0.02,
     };
-    private final Spinner[] spinners = new Spinner[9] ;
+    private final Spinner[] spinners = new Spinner[8] ;
     private final WebView infoOutput = new WebView();
 
     @Override
@@ -159,11 +152,8 @@ public class Main extends Application {
     }
 
     private EventHandler buttonStartEvent = event -> {
-        System.out.println("world");
-        Calculation calculation = calculate((double)spinners[0].getValue() / 1000000, (double)spinners[1].getValue() / 1000000, (double)spinners[2].getValue(), (double)spinners[3].getValue(), (double)spinners[4].getValue(), (double)spinners[5].getValue(), ((Double)spinners[6].getValue()).intValue(), ((Double)spinners[7].getValue()).intValue(), (double)spinners[8].getValue());
+        Calculation calculation = calculate((double)spinners[0].getValue() / 1000000, (double)spinners[1].getValue() / 1000000, (double)spinners[2].getValue(), (double)spinners[3].getValue(), (double)spinners[4].getValue(), (double)spinners[5].getValue(), ((Double)spinners[6].getValue()).intValue(), ((Double)spinners[7].getValue()).intValue());
         infoOutput.getEngine().loadContent(fillOutput(calculation));
-        System.out.println(calculation.power);
-        System.out.println("hello");
     };
 
     public static String fillOutput(Calculation calculation) {
@@ -182,7 +172,7 @@ public class Main extends Application {
                 "P = " + (double)Math.round(calculation.power * 1000) / 1000 + " kW</p></html>";
     }
 
-    public static Calculation calculate(double volume2, double volume3, double temperature2, double pressure2, double heatValue, double airFuelRatio, int rpm, int cylinderCount, double efficiency) {
+    public static Calculation calculate(double volume2, double volume3, double temperature2, double pressure2, double heatValue, double airFuelRatio, int rpm, int cylinderCount) {
         Calculation calculation = new Calculation();
         calculation.compressionRatio = volume2 / volume3;
         calculation.temperature3 = temperature2 * Math.pow(calculation.compressionRatio, specificHeatRatio - 1);
@@ -191,13 +181,40 @@ public class Main extends Application {
         calculation.pressure4 = calculation.temperature4 * calculation.pressure3 / calculation.temperature3;
         calculation.temperature5 = calculation.temperature4 * Math.pow(calculation.compressionRatio, 1 - specificHeatRatio);
         calculation.pressure5 = calculation.pressure4 * Math.pow(calculation.compressionRatio, - specificHeatRatio);
-        calculation.work = airHeatCapacity * airDensity * volume2 * (calculation.temperature4 - calculation.temperature3 - calculation.temperature5 + temperature2) * efficiency;
-        calculation.power = rpm * calculation.work * cylinderCount / 120;
+        //
+        double frac = .000001;
+        int samples = (int)((volume2 - volume3) / frac) + 1;
+        calculation.process23 = new double[3][samples];
+        calculation.process23[0][0] = volume2;
+        calculation.process23[1][0] = pressure2;
+        calculation.process23[2][0] = temperature2;
+        for (int i = 1; i < samples; i++) {
+            calculation.process23[0][i] = calculation.process23[0][i - 1] - frac;
+            calculation.process23[1][i] = calculation.process23[1][i - 1] * Math.pow(calculation.process23[0][i - 1] / calculation.process23[0][i], specificHeatRatio);
+            calculation.process23[2][i] = calculation.process23[2][i - 1] * Math.pow(calculation.process23[0][i - 1] / calculation.process23[0][i], specificHeatRatio - 1);
+        }
+        calculation.process45 = new double[3][samples];
+        calculation.process45[0][0] = calculation.process23[0][samples - 1];
+        calculation.process45[2][0] = calculation.process23[2][samples - 1] + (heatValue / (airFuelRatio * airHeatCapacity));
+        calculation.process45[1][0] = calculation.process23[1][samples - 1] * calculation.process45[2][0] / calculation.process23[2][samples - 1];
+        for (int i = 1; i < samples; i++) {
+            calculation.process45[0][i] = calculation.process45[0][i - 1] + frac;
+            calculation.process45[1][i] = calculation.process45[1][i - 1] * Math.pow(calculation.process45[0][i - 1] / calculation.process45[0][i], -specificHeatRatio);
+            calculation.process45[2][i] = calculation.process45[2][i - 1] * Math.pow(calculation.process45[0][i - 1] / calculation.process45[0][i], 1 - specificHeatRatio);
+        }
+        double work = 0;
+        for (int i = 0; i < samples; i++) {
+            work += 1 * (calculation.process45[1][samples - i - 1] - calculation.process23[1][i]);
+        }
+        work *= frac;
+        calculation.work = work;
+        calculation.power = work * rpm / 60 * cylinderCount;
+        //
         return calculation;
     }
 
     private <T> void commitEditorText() {
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < spinners.length; i++) {
             if (!spinners[i].isEditable()) return;
             String text = spinners[i].getEditor().getText();
             SpinnerValueFactory<T> valueFactory = spinners[i].getValueFactory();
