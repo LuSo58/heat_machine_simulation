@@ -1,17 +1,27 @@
 package heatMachineSimulation;
 //
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.StringConverter;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.LinkedList;
 
 public class Main extends Application {
 
@@ -46,7 +56,7 @@ public class Main extends Application {
             0.1,
             44800,
             50,
-            2000,
+            4000,
             4,
     };
     public static final double[] heatMachineInputsMin = new double[]{
@@ -79,8 +89,19 @@ public class Main extends Application {
             100,
             1,
     };
+    //
+    private Canvas diagramCanvas;
+    private Canvas animationCanvas;
+    //
     private final Spinner[] spinners = new Spinner[8] ;
     private final WebView infoOutput = new WebView();
+    private final WebView infoDynamic = new WebView();
+    private Timeline timeline;
+    //
+    private double animationPScale;
+    private double animationVScale;
+    private Image animationDiagram;
+    private int[][] animationTrace;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -119,28 +140,36 @@ public class Main extends Application {
         WebView infoLegend = new WebView();
         infoLegend.getEngine().loadContent("<html><style rel=\"stylesheet\" type=\"text/css\">html { background: transparent; margin: 0; padding: 5px; font-size: 1.05em; font-family: Roboto, Arial; line-height: 1.3em; } html * { background: transparent; margin: 0; padding: 0; line-height: 1.5em; }</style><p>V<sub>2</sub> - Objem při expanzi [cm<sup>3</sup>]<br>V<sub>3</sub> - Objem při kompresi [cm<sup>3</sup>]<br>T<sub>2</sub> - Venkovní teplota [K]<br>p<sub>2</sub> - Atmosférický tlak [MPa]<br>Q - Výhřevnost paliva [kJ&times;kg<sup>-1</sup>]<br>f - Poměr vzduch/palivo<br>rpm - Otáčky za minutu [rpm]<br>n - Počet válců<br>η - Účinnost motoru<br>r - Kompresní poměr<br><br><br>c<sub>V</sub> - Měrná tepelná kapacita [kJ&times;kg<sup>-1</sup>&times;K<sup>-1</sup>]<br>ρ - Hustota vzduchu [kg&times;m<sup>-3</sup>]<br>γ - Poissonova konstanta</p><html>");
         infoOutput.getEngine().loadContent("");
+        infoDynamic.getEngine().loadContent("");
         infoLegend.setPrefWidth(400);
         infoLegend.setPrefHeight(430);
         infoLegend.setLayoutX(10);
         infoLegend.setLayoutY(160);
-        infoOutput.setPrefWidth(400);
+        infoOutput.setPrefWidth(195);
         infoOutput.setPrefHeight(430);
         infoOutput.setLayoutX(420);
         infoOutput.setLayoutY(160);
+        infoDynamic.setPrefWidth(195);
+        infoDynamic.setPrefHeight(430);
+        infoDynamic.setLayoutX(625);
+        infoDynamic.setLayoutY(160);
         //
-        anchorPane.getChildren().addAll(buttonStart, infoLegend, infoOutput);
+        anchorPane.getChildren().addAll(buttonStart, infoLegend, infoOutput, infoDynamic);
         //
         anchorPane.setMinWidth(830);
         anchorPane.setMinHeight(600);
         //
         VBox vBox = new VBox();
         //
-        Canvas diagramCanvas = new Canvas(300, 300);
+        diagramCanvas = new Canvas(330, 330);
         diagramCanvas.getGraphicsContext2D().drawImage(new Image(this.getClass().getResourceAsStream("/diagram_otto.png")), 0, 0);
         //
-        Canvas animationCanvas = new Canvas(300, 300);
+//        animationCanvas = new Canvas(300, 300);
         //
-        vBox.getChildren().addAll(diagramCanvas, animationCanvas);
+        vBox.getChildren().addAll(diagramCanvas/*, animationCanvas*/);
+        //
+        timeline = new Timeline(new KeyFrame(Duration.millis(30), animate));
+        timeline.setCycleCount(Timeline.INDEFINITE);
         //
         BorderPane rootPane = new BorderPane();
         rootPane.setCenter(anchorPane);
@@ -154,6 +183,50 @@ public class Main extends Application {
     private EventHandler buttonStartEvent = event -> {
         Calculation calculation = calculate((double)spinners[0].getValue() / 1000000, (double)spinners[1].getValue() / 1000000, (double)spinners[2].getValue(), (double)spinners[3].getValue(), (double)spinners[4].getValue(), (double)spinners[5].getValue(), ((Double)spinners[6].getValue()).intValue(), ((Double)spinners[7].getValue()).intValue());
         infoOutput.getEngine().loadContent(fillOutput(calculation));
+        System.out.println((double)spinners[0].getValue());
+        animationVScale = 280 / (double)spinners[0].getValue();
+        animationPScale = 280 / calculation.process45[1][0];
+        System.out.println(animationVScale);
+        System.out.println(animationPScale);
+        prepairDiagram(calculation);
+//        timeline.play();
+    };
+
+    private void prepairDiagram(Calculation calculation) {
+        BufferedImage bufferedImage = new BufferedImage(330, 330, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = (Graphics2D)bufferedImage.getGraphics();
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setPaint(Color.WHITE);
+        graphics.fillRect(0, 0, 330, 330);
+        graphics.setStroke(new BasicStroke(3));
+        graphics.setColor(Color.BLACK);
+        graphics.drawLine(30, 0, 30, 300);
+        graphics.drawLine(30, 300, 300, 300);
+        graphics.setStroke(new BasicStroke(1));
+        graphics.drawLine(30, 300 - (int)animationPScale, 35, 300 - (int)animationPScale);
+        graphics.drawString("1", 5, 300 - ((int)animationPScale) + 5);
+        graphics.drawLine(30, 300 - (int)animationPScale * 2, 35, 300 - (int)animationPScale * 2);
+        graphics.drawString("2", 5, 300 - ((int)animationPScale * 2) + 5);
+        graphics.drawLine(30, 300 - (int)animationPScale * 5, 35, 300 - (int)animationPScale * 5);
+        graphics.drawString("5", 5, 300 - ((int)animationPScale * 5) + 5);
+        graphics.drawLine(30, 300 - (int)animationPScale * 10, 35, 300 - (int)animationPScale * 10);
+        graphics.drawString("10", 5, 300 - ((int)animationPScale * 10) + 5);
+        graphics.drawLine(30, 300 - (int)animationPScale * 15, 35, 300 - (int)animationPScale * 15);
+        graphics.drawString("15", 5, 300 - ((int)animationPScale * 15) + 5);
+        //
+        graphics.drawLine((int)(animationVScale * 100) + 30, 300, (int)(animationVScale * 100) + 30, 295);
+        graphics.drawString("100", (int)(animationVScale * 100) + 20, 315);
+        //
+        LinkedList<Integer> temporaryList = new LinkedList<>();
+        System.out.println(calculation.process23[0].length/2);
+        //
+        bufferedImage.flush();
+        animationDiagram = SwingFXUtils.toFXImage(bufferedImage, null);
+        diagramCanvas.getGraphicsContext2D().drawImage(animationDiagram, 0, 0);
+    }
+
+    private EventHandler animate = event -> {
+
     };
 
     public static String fillOutput(Calculation calculation) {
