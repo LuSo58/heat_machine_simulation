@@ -1,17 +1,21 @@
-package heatMachineSimulation;
+package com.luso.heatMachineSimulation;
 //
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
+import javafx.scene.paint.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.web.WebView;
@@ -23,6 +27,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 
+@SuppressWarnings("WeakerAccess")
 public class Main extends Application {
 
     public enum heatMachineInputs {
@@ -37,7 +42,8 @@ public class Main extends Application {
     }
     public static final double airHeatCapacity = 0.72;
     public static final double airDensity = 1.29;
-    public static final double specificHeatRatio = 1.4;
+    public static final double specificHeatRatioAir = 1.4;
+    public static final double specificHeatRatioCO2 = 1.6666666666666667;
 
     public static final String[] heatMachineInputsShorts = new String[]{
             "V₂",
@@ -89,6 +95,8 @@ public class Main extends Application {
             100,
             1,
     };
+    public static final double frac = .0000001;
+    public static int samples;
     //
     private Canvas diagramCanvas;
     private Canvas animationCanvas;
@@ -101,7 +109,9 @@ public class Main extends Application {
     private double animationPScale;
     private double animationVScale;
     private Image animationDiagram;
-    private int[][] animationTrace;
+    private Snapshot[] animationTrace;
+    private int animationState = 0;
+    private static final int animationCircleSize = 12;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -142,32 +152,33 @@ public class Main extends Application {
         infoOutput.getEngine().loadContent("");
         infoDynamic.getEngine().loadContent("");
         infoLegend.setPrefWidth(400);
-        infoLegend.setPrefHeight(430);
+        infoLegend.setPrefHeight(490);
         infoLegend.setLayoutX(10);
         infoLegend.setLayoutY(160);
         infoOutput.setPrefWidth(195);
-        infoOutput.setPrefHeight(430);
+        infoOutput.setPrefHeight(490);
         infoOutput.setLayoutX(420);
         infoOutput.setLayoutY(160);
         infoDynamic.setPrefWidth(195);
-        infoDynamic.setPrefHeight(430);
+        infoDynamic.setPrefHeight(490);
         infoDynamic.setLayoutX(625);
         infoDynamic.setLayoutY(160);
         //
         anchorPane.getChildren().addAll(buttonStart, infoLegend, infoOutput, infoDynamic);
         //
         anchorPane.setMinWidth(830);
-        anchorPane.setMinHeight(600);
+        anchorPane.setMinHeight(660);
         //
         VBox vBox = new VBox();
         //
         diagramCanvas = new Canvas(330, 330);
-        diagramCanvas.getGraphicsContext2D().drawImage(new Image(this.getClass().getResourceAsStream("/diagram_otto.png")), 0, 0);
+//        diagramCanvas.getGraphicsContext2D().drawImage(new Image(this.getClass().getResourceAsStream("/diagram_otto.png")), 0, 0);
         //
 //        animationCanvas = new Canvas(300, 300);
         //
         vBox.getChildren().addAll(diagramCanvas/*, animationCanvas*/);
         //
+        assert animate != null;
         timeline = new Timeline(new KeyFrame(Duration.millis(30), animate));
         timeline.setCycleCount(Timeline.INDEFINITE);
         //
@@ -180,26 +191,23 @@ public class Main extends Application {
         stage.show();
     }
 
-    private EventHandler buttonStartEvent = event -> {
+    private EventHandler<ActionEvent> buttonStartEvent = event -> {
         Calculation calculation = calculate((double)spinners[0].getValue() / 1000000, (double)spinners[1].getValue() / 1000000, (double)spinners[2].getValue(), (double)spinners[3].getValue(), (double)spinners[4].getValue(), (double)spinners[5].getValue(), ((Double)spinners[6].getValue()).intValue(), ((Double)spinners[7].getValue()).intValue());
         infoOutput.getEngine().loadContent(fillOutput(calculation));
-        System.out.println((double)spinners[0].getValue());
-        animationVScale = 280 / (double)spinners[0].getValue();
-        animationPScale = 280 / calculation.process45[1][0];
-        System.out.println(animationVScale);
-        System.out.println(animationPScale);
+        animationVScale = 280 / calculation.volume2;
+        animationPScale = 280 / calculation.pressure4;
         prepairDiagram(calculation);
-//        timeline.play();
+        timeline.play();
     };
 
     private void prepairDiagram(Calculation calculation) {
         BufferedImage bufferedImage = new BufferedImage(330, 330, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = (Graphics2D)bufferedImage.getGraphics();
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        graphics.setPaint(Color.WHITE);
+        graphics.setPaint(java.awt.Color.WHITE);
         graphics.fillRect(0, 0, 330, 330);
         graphics.setStroke(new BasicStroke(3));
-        graphics.setColor(Color.BLACK);
+        graphics.setColor(java.awt.Color.BLACK);
         graphics.drawLine(30, 0, 30, 300);
         graphics.drawLine(30, 300, 300, 300);
         graphics.setStroke(new BasicStroke(1));
@@ -214,22 +222,97 @@ public class Main extends Application {
         graphics.drawLine(30, 300 - (int)animationPScale * 15, 35, 300 - (int)animationPScale * 15);
         graphics.drawString("15", 5, 300 - ((int)animationPScale * 15) + 5);
         //
-        graphics.drawLine((int)(animationVScale * 100) + 30, 300, (int)(animationVScale * 100) + 30, 295);
-        graphics.drawString("100", (int)(animationVScale * 100) + 20, 315);
+        System.out.println((int)(animationVScale * 100000) + 30);
+        graphics.drawLine((int)(animationVScale * 100000) + 30, 300, (int)(animationVScale * 100000) + 30, 295);
+        graphics.drawString("100", (int)(animationVScale * 100000) + 20, 315);
+        graphics.drawLine((int)(animationVScale * 200000) + 30, 300, (int)(animationVScale * 200000) + 30, 295);
+        graphics.drawString("200", (int)(animationVScale * 200000) + 20, 315);
+        graphics.drawLine((int)(animationVScale * 500000) + 30, 300, (int)(animationVScale * 500000) + 30, 295);
+        graphics.drawString("500", (int)(animationVScale * 500000) + 20, 315);
         //
-        LinkedList<Integer> temporaryList = new LinkedList<>();
-        System.out.println(calculation.process23[0].length/2);
+        //region Calculate Snapshots
+        LinkedList<Snapshot> temporaryList = new LinkedList<>();
+        {
+            for (double i = calculation.volume3; i < calculation.volume2; i += frac) {
+                Snapshot temp = new Snapshot();
+                temp.pressure = calculation.pressure2;
+                temp.temp = calculation.temperature2;
+                temp.volume = i;
+                temp.X = (int) (temp.volume * animationVScale + 30);
+                temp.Y = (int) (300 - temp.pressure * animationPScale);
+                temporaryList.add(temp);
+            }
+            for (int i = 0; i < samples; i++) {
+                Snapshot temp = new Snapshot();
+                temp.pressure = calculation.process23[1][i];
+                temp.temp = calculation.process23[2][i];
+                temp.volume = calculation.process23[0][i];
+                temp.X = (int) (temp.volume * animationVScale + 30);
+                temp.Y = (int) (300 - temp.pressure * animationPScale);
+                temporaryList.add(temp);
+            }
+            int samplesForExplosion = 5;
+            for (int i = 1; i < samplesForExplosion; i++) {
+                Snapshot temp = new Snapshot();
+                temp.pressure = calculation.process23[1][samples - 1] + (calculation.process35[1][0] - calculation.process23[1][samples - 1]) * (i / samplesForExplosion);
+                temp.temp = calculation.process23[2][samples - 1] + (calculation.process35[2][0] - calculation.process23[2][samples - 1]) * (i / samplesForExplosion);
+                temp.volume = calculation.process23[0][samples - 1];
+                temp.X = (int) (temp.volume * animationVScale + 30);
+                temp.Y = (int) (300 - temp.pressure * animationPScale);
+                temporaryList.add(temp);
+            }
+            for (int i = 0; i < samples; i++) {
+                Snapshot temp = new Snapshot();
+                temp.pressure = calculation.process35[1][i];
+                temp.temp = calculation.process35[2][i];
+                temp.volume = calculation.process35[0][i];
+                temp.X = (int) (temp.volume * animationVScale + 30);
+                temp.Y = (int) (300 - temp.pressure * animationPScale);
+                temporaryList.add(temp);
+            }
+            {
+                double temperature = temporaryList.getLast().temp;
+                double startingVolume = temporaryList.getLast().volume;
+                double pressure = temporaryList.getLast().pressure;
+                for (double i = startingVolume; i > calculation.volume3; i -= frac) {
+                    Snapshot temp = new Snapshot();
+                    temp.pressure = pressure;
+                    temp.temp = temperature;
+                    temp.volume = i;
+                    temp.X = (int) (temp.volume * animationVScale + 30);
+                    temp.Y = (int) (300 - temp.pressure * animationPScale);
+                    temporaryList.add(temp);
+                }
+            }
+        }
+        animationTrace = (temporaryList.toArray(new Snapshot[temporaryList.size()]));
+        //endregion
+        //
+        Polygon temporaryPolygon = new Polygon();
+        for (Snapshot snapshot : animationTrace) {
+            temporaryPolygon.addPoint(snapshot.X, snapshot.Y);
+        }
+        graphics.setColor(new java.awt.Color(255, 0, 0));
+        graphics.drawPolygon(temporaryPolygon);
         //
         bufferedImage.flush();
         animationDiagram = SwingFXUtils.toFXImage(bufferedImage, null);
         diagramCanvas.getGraphicsContext2D().drawImage(animationDiagram, 0, 0);
     }
 
-    private EventHandler animate = event -> {
-
+    private EventHandler<ActionEvent> animate = event -> {
+        GraphicsContext graphics = diagramCanvas.getGraphicsContext2D();
+        graphics.drawImage(animationDiagram, 0, 0);
+        graphics.setFill(Color.rgb(0, 141, 255, 0.502));
+        graphics.fillOval(animationTrace[animationState].X - animationCircleSize / 2, animationTrace[animationState].Y - animationCircleSize / 2, animationCircleSize, animationCircleSize);
+        graphics.setFill(Color.rgb(0, 0, 255));
+        graphics.setLineWidth(2);
+        graphics.strokeOval(animationTrace[animationState].X - animationCircleSize / 2, animationTrace[animationState].Y - animationCircleSize / 2, animationCircleSize, animationCircleSize);
+        animationState+=30;
+        if (animationState >= animationTrace.length) animationState = 0;
     };
 
-    public static String fillOutput(Calculation calculation) {
+    private static String fillOutput(Calculation calculation) {
         return "<html><style rel=\"stylesheet\" type=\"text/css\">html { background: transparent; margin: 0; padding: 5px; font-size: 1.05em; font-family: Roboto, Arial; line-height: 1.3em; } html * { background: transparent; margin: 0; padding: 0; line-height: 1.5em; }</style><p>" +
                 "r = " + (double)Math.round(calculation.compressionRatio * 1000) / 1000 + "<br>" +
                 "c<sub>V</sub> = 0.72 kJ&times;kg<sup>-1</sup>&times;K<sup>-1</sup><br>" +
@@ -248,49 +331,56 @@ public class Main extends Application {
     public static Calculation calculate(double volume2, double volume3, double temperature2, double pressure2, double heatValue, double airFuelRatio, int rpm, int cylinderCount) {
         Calculation calculation = new Calculation();
         calculation.compressionRatio = volume2 / volume3;
-        calculation.temperature3 = temperature2 * Math.pow(calculation.compressionRatio, specificHeatRatio - 1);
-        calculation.pressure3 = pressure2 * Math.pow(calculation.compressionRatio, specificHeatRatio);
-        calculation.temperature4 = calculation.temperature3 + (heatValue / (airFuelRatio * airHeatCapacity));
-        calculation.pressure4 = calculation.temperature4 * calculation.pressure3 / calculation.temperature3;
-        calculation.temperature5 = calculation.temperature4 * Math.pow(calculation.compressionRatio, 1 - specificHeatRatio);
-        calculation.pressure5 = calculation.pressure4 * Math.pow(calculation.compressionRatio, - specificHeatRatio);
         //
-        double frac = .000001;
-        int samples = (int)((volume2 - volume3) / frac) + 1;
+        samples = (int)((volume2 - volume3) / frac) + 1;
         calculation.process23 = new double[3][samples];
-        calculation.process23[0][0] = volume2;
-        calculation.process23[1][0] = pressure2;
-        calculation.process23[2][0] = temperature2;
+        calculation.process23[0][0] = calculation.volume2 = volume2;
+        calculation.process23[1][0] = calculation.pressure2 = pressure2;
+        calculation.process23[2][0] = calculation.temperature2 = temperature2;
         for (int i = 1; i < samples; i++) {
             calculation.process23[0][i] = calculation.process23[0][i - 1] - frac;
-            calculation.process23[1][i] = calculation.process23[1][i - 1] * Math.pow(calculation.process23[0][i - 1] / calculation.process23[0][i], specificHeatRatio);
-            calculation.process23[2][i] = calculation.process23[2][i - 1] * Math.pow(calculation.process23[0][i - 1] / calculation.process23[0][i], specificHeatRatio - 1);
+            calculation.process23[1][i] = calculation.process23[1][i - 1] * Math.pow(calculation.process23[0][i - 1] / calculation.process23[0][i], specificHeatRatioAir);
+            calculation.process23[2][i] = calculation.process23[2][i - 1] * Math.pow(calculation.process23[0][i - 1] / calculation.process23[0][i], specificHeatRatioAir - 1);
         }
-        calculation.process45 = new double[3][samples];
-        calculation.process45[0][0] = calculation.process23[0][samples - 1];
-        calculation.process45[2][0] = calculation.process23[2][samples - 1] + (heatValue / (airFuelRatio * airHeatCapacity));
-        calculation.process45[1][0] = calculation.process23[1][samples - 1] * calculation.process45[2][0] / calculation.process23[2][samples - 1];
-        for (int i = 1; i < samples; i++) {
-            calculation.process45[0][i] = calculation.process45[0][i - 1] + frac;
-            calculation.process45[1][i] = calculation.process45[1][i - 1] * Math.pow(calculation.process45[0][i - 1] / calculation.process45[0][i], -specificHeatRatio);
-            calculation.process45[2][i] = calculation.process45[2][i - 1] * Math.pow(calculation.process45[0][i - 1] / calculation.process45[0][i], 1 - specificHeatRatio);
+        calculation.volume3 = calculation.process23[0][samples - 1];
+        calculation.temperature3 = calculation.process23[2][samples - 1];
+        calculation.temperature4 = calculation.temperature3 + (heatValue / (airFuelRatio * airHeatCapacity));
+        calculation.volume4 = calculation.volume3 * calculation.temperature4 / calculation.temperature3;
+        calculation.process35 = new double[3][samples];
+        calculation.process35[0][0] = calculation.volume3;
+        calculation.process35[1][0] = calculation.pressure3 = calculation.pressure4 = calculation.process23[1][samples - 1];
+        calculation.process35[2][0] = calculation.temperature3;
+        int samplesForIsobaric = (int)((calculation.volume4 - calculation.volume3)/frac);
+        for (int i = 1; i < samplesForIsobaric; i++) {
+            calculation.process35[0][i] = calculation.process35[0][i - 1] + frac;
+            calculation.process35[1][i] = calculation.process35[1][i - 1];
+            calculation.process35[2][i] = calculation.process35[2][i - 1] + (calculation.temperature4 - calculation.temperature3) / samplesForIsobaric;
         }
+        for (int i = samplesForIsobaric; i < samples; i++) {
+            calculation.process35[0][i] = calculation.process35[0][i - 1] + frac;
+            calculation.process35[1][i] = calculation.process35[1][i - 1] * Math.pow(calculation.process35[0][i - 1] / calculation.process35[0][i], specificHeatRatioCO2);
+            calculation.process35[2][i] = calculation.process35[2][i - 1] * (Math.pow(calculation.process35[0][i - 1] / calculation.process35[0][i], specificHeatRatioCO2 - 1));
+        }
+        calculation.volume5 = calculation.process35[0][samples - 1];
+        calculation.pressure5 = calculation.process35[1][samples - 1];
+        calculation.temperature5 = calculation.process35[2][samples - 1];
         double work = 0;
         for (int i = 0; i < samples; i++) {
-            work += 1 * (calculation.process45[1][samples - i - 1] - calculation.process23[1][i]);
+            work += ((calculation.process35[1][samples - i - 1] - calculation.process23[1][i]));
         }
-        work *= frac;
+        work *= frac * 1000;
         calculation.work = work;
         calculation.power = work * rpm / 60 * cylinderCount;
         //
         return calculation;
     }
 
+    @SuppressWarnings("unchecked")
     private <T> void commitEditorText() {
-        for (int i = 0; i < spinners.length; i++) {
-            if (!spinners[i].isEditable()) return;
-            String text = spinners[i].getEditor().getText();
-            SpinnerValueFactory<T> valueFactory = spinners[i].getValueFactory();
+        for (Spinner spinner : spinners) {
+            if (!spinner.isEditable()) return;
+            String text = spinner.getEditor().getText();
+            SpinnerValueFactory<T> valueFactory = spinner.getValueFactory();
             if (valueFactory != null) {
                 StringConverter<T> converter = valueFactory.getConverter();
                 if (converter != null) {

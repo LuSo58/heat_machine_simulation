@@ -12,5 +12,5 @@
 hs_err_pid*
 
 .idea/
-heat_machine_simulation.iml
+*.iml
 out/
