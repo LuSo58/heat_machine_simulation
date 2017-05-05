@@ -14,7 +14,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
-import javafx.scene.paint.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
@@ -26,10 +25,11 @@ import javafx.util.StringConverter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.LinkedList;
-
+//
 @SuppressWarnings("WeakerAccess")
 public class Main extends Application {
 
+    //region Globals
     public enum heatMachineInputs {
         Volume1,
         Volume2,
@@ -95,11 +95,16 @@ public class Main extends Application {
             100,
             1,
     };
+    @SuppressWarnings("SpellCheckingInspection")
     public static final double frac = .0000001;
     public static int samples;
     //
     private Canvas diagramCanvas;
-    private Canvas animationCanvas;
+    private Image diagramPlaceholder;
+    private Canvas pistonCanvas;
+    private Button buttonStart;
+    private Button buttonStop;
+    private Button buttonPause;
     //
     private final Spinner[] spinners = new Spinner[8] ;
     private final WebView infoOutput = new WebView();
@@ -112,6 +117,7 @@ public class Main extends Application {
     private Snapshot[] animationTrace;
     private int animationState = 0;
     private static final int animationCircleSize = 12;
+    //endregion
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -140,15 +146,64 @@ public class Main extends Application {
             anchorPane.getChildren().add(inputPane);
         }
         //
-        Button buttonStart = new Button("Start");
-        buttonStart.setLayoutX(728);
-        buttonStart.setLayoutY(60);
-        buttonStart.setPrefWidth(50);
-        buttonStart.setPrefHeight(30);
-        buttonStart.setOnAction(buttonStartEvent);
+        Button btn = new Button("Start");
+        btn.setLayoutX(700);
+        btn.setLayoutY(10);
+        btn.setPrefWidth(90);
+        btn.setPrefHeight(30);
+        btn.setOnAction(buttonStartEvent);
+        buttonStart = btn;
+        anchorPane.getChildren().add(btn);
+        btn = new Button("Stop");
+        btn.setLayoutX(700);
+        btn.setLayoutY(50);
+        btn.setPrefWidth(90);
+        btn.setPrefHeight(30);
+        btn.setDisable(true);
+        btn.setOnAction(buttonStopEvent);
+        buttonStop = btn;
+        anchorPane.getChildren().add(btn);
+        btn = new Button("Pause");
+        btn.setLayoutX(700);
+        btn.setLayoutY(90);
+        btn.setPrefWidth(90);
+        btn.setPrefHeight(30);
+        btn.setDisable(true);
+        btn.setOnAction(buttonPauseEvent);
+        buttonPause = btn;
+        anchorPane.getChildren().add(btn);
         //
         WebView infoLegend = new WebView();
-        infoLegend.getEngine().loadContent("<html><style rel=\"stylesheet\" type=\"text/css\">html { background: transparent; margin: 0; padding: 5px; font-size: 1.05em; font-family: Roboto, Arial; line-height: 1.3em; } html * { background: transparent; margin: 0; padding: 0; line-height: 1.5em; }</style><p>V<sub>2</sub> - Objem při expanzi [cm<sup>3</sup>]<br>V<sub>3</sub> - Objem při kompresi [cm<sup>3</sup>]<br>T<sub>2</sub> - Venkovní teplota [K]<br>p<sub>2</sub> - Atmosférický tlak [MPa]<br>Q - Výhřevnost paliva [kJ&times;kg<sup>-1</sup>]<br>f - Poměr vzduch/palivo<br>rpm - Otáčky za minutu [rpm]<br>n - Počet válců<br>η - Účinnost motoru<br>r - Kompresní poměr<br><br><br>c<sub>V</sub> - Měrná tepelná kapacita [kJ&times;kg<sup>-1</sup>&times;K<sup>-1</sup>]<br>ρ - Hustota vzduchu [kg&times;m<sup>-3</sup>]<br>γ - Poissonova konstanta</p><html>");
+        infoLegend.getEngine().loadContent("" +
+                "<html><style rel=\"stylesheet\" type=\"text/css\">" +
+                "html { " +
+                "background: transparent; " +
+                "margin: 0; " +
+                "padding: 5px; " +
+                "font-size: 1.05em; " +
+                "font-family: Roboto, Arial; " +
+                "line-height: 1.3em; " +
+                "} " +
+                "html * { " +
+                "background: transparent; " +
+                "margin: 0; " +
+                "padding: 0; " +
+                "line-height: 1.5em; " +
+                "}" +
+                "</style>" +
+                "<p>V<sub>2</sub> - Objem při expanzi [cm<sup>3</sup>]<br>" +
+                "V<sub>3</sub> - Objem při kompresi [cm<sup>3</sup>]<br>" +
+                "T<sub>2</sub> - Venkovní teplota [K]<br>" +
+                "p<sub>2</sub> - Atmosférický tlak [MPa]<br>" +
+                "Q - Výhřevnost paliva [kJ&times;kg<sup>-1</sup>]<br>" +
+                "f - Poměr vzduch/palivo<br>" +
+                "rpm - Otáčky za minutu [rpm]<br>" +
+                "n - Počet válců<br>" +
+                "η - Účinnost motoru<br>" +
+                "r - Kompresní poměr<br><br><br>" +
+                "c<sub>V</sub> - Měrná tepelná kapacita [kJ&times;kg<sup>-1</sup>&times;K<sup>-1</sup>]<br>" +
+                "ρ - Hustota vzduchu [kg&times;m<sup>-3</sup>]<br>" +
+                "γ - Poissonova konstanta</p><html>");
         infoOutput.getEngine().loadContent("");
         infoDynamic.getEngine().loadContent("");
         infoLegend.setPrefWidth(400);
@@ -164,7 +219,7 @@ public class Main extends Application {
         infoDynamic.setLayoutX(625);
         infoDynamic.setLayoutY(160);
         //
-        anchorPane.getChildren().addAll(buttonStart, infoLegend, infoOutput, infoDynamic);
+        anchorPane.getChildren().addAll(infoLegend, infoOutput, infoDynamic);
         //
         anchorPane.setMinWidth(830);
         anchorPane.setMinHeight(660);
@@ -172,11 +227,14 @@ public class Main extends Application {
         VBox vBox = new VBox();
         //
         diagramCanvas = new Canvas(330, 330);
-//        diagramCanvas.getGraphicsContext2D().drawImage(new Image(this.getClass().getResourceAsStream("/diagram_otto.png")), 0, 0);
+        diagramPlaceholder = new Image(this.getClass().getResourceAsStream("/diagram_diesel.png"));
+        diagramCanvas.getGraphicsContext2D().drawImage(diagramPlaceholder, 0, 0);
         //
-//        animationCanvas = new Canvas(300, 300);
+        pistonCanvas = new Canvas(330, 330);
+        pistonCanvas.getGraphicsContext2D().setFill(new Color(0, 0, 0, 1));
+        pistonCanvas.getGraphicsContext2D().fillRect(0, 0, 330, 330);
         //
-        vBox.getChildren().addAll(diagramCanvas/*, animationCanvas*/);
+        vBox.getChildren().addAll(diagramCanvas, pistonCanvas);
         //
         assert animate != null;
         timeline = new Timeline(new KeyFrame(Duration.millis(30), animate));
@@ -192,12 +250,39 @@ public class Main extends Application {
     }
 
     private EventHandler<ActionEvent> buttonStartEvent = event -> {
-        Calculation calculation = calculate((double)spinners[0].getValue() / 1000000, (double)spinners[1].getValue() / 1000000, (double)spinners[2].getValue(), (double)spinners[3].getValue(), (double)spinners[4].getValue(), (double)spinners[5].getValue(), ((Double)spinners[6].getValue()).intValue(), ((Double)spinners[7].getValue()).intValue());
+        Calculation calculation = calculate(
+                (double)spinners[0].getValue() / 1000000,
+                (double)spinners[1].getValue() / 1000000,
+                (double)spinners[2].getValue(),
+                (double)spinners[3].getValue(),
+                (double)spinners[4].getValue(),
+                (double)spinners[5].getValue(),
+                ((Double)spinners[6].getValue()).intValue(),
+                ((Double)spinners[7].getValue()).intValue());
         infoOutput.getEngine().loadContent(fillOutput(calculation));
         animationVScale = 280 / calculation.volume2;
         animationPScale = 280 / calculation.pressure4;
         prepairDiagram(calculation);
         timeline.play();
+        buttonStop.setDisable(false);
+        buttonPause.setDisable(false);
+        buttonStart.setDisable(true);
+    };
+
+    private EventHandler<ActionEvent> buttonStopEvent = event -> {
+        timeline.pause();
+        animationState = 0;
+        buttonStop.setDisable(true);
+        buttonPause.setDisable(true);
+        buttonStart.setDisable(false);
+        diagramCanvas.getGraphicsContext2D().drawImage(diagramPlaceholder, 0, 0);
+    };
+
+    private EventHandler<ActionEvent> buttonPauseEvent = event -> {
+        timeline.pause();
+        buttonStop.setDisable(true);
+        buttonPause.setDisable(true);
+        buttonStart.setDisable(false);
     };
 
     private void prepairDiagram(Calculation calculation) {
@@ -209,7 +294,7 @@ public class Main extends Application {
         graphics.setStroke(new BasicStroke(3));
         graphics.setColor(java.awt.Color.BLACK);
         graphics.drawLine(30, 0, 30, 300);
-        graphics.drawLine(30, 300, 300, 300);
+        graphics.drawLine(30, 300, 330, 300);
         graphics.setStroke(new BasicStroke(1));
         graphics.drawLine(30, 300 - (int)animationPScale, 35, 300 - (int)animationPScale);
         graphics.drawString("1", 5, 300 - ((int)animationPScale) + 5);
@@ -222,13 +307,13 @@ public class Main extends Application {
         graphics.drawLine(30, 300 - (int)animationPScale * 15, 35, 300 - (int)animationPScale * 15);
         graphics.drawString("15", 5, 300 - ((int)animationPScale * 15) + 5);
         //
-        System.out.println((int)(animationVScale * 100000) + 30);
-        graphics.drawLine((int)(animationVScale * 100000) + 30, 300, (int)(animationVScale * 100000) + 30, 295);
-        graphics.drawString("100", (int)(animationVScale * 100000) + 20, 315);
-        graphics.drawLine((int)(animationVScale * 200000) + 30, 300, (int)(animationVScale * 200000) + 30, 295);
-        graphics.drawString("200", (int)(animationVScale * 200000) + 20, 315);
-        graphics.drawLine((int)(animationVScale * 500000) + 30, 300, (int)(animationVScale * 500000) + 30, 295);
-        graphics.drawString("500", (int)(animationVScale * 500000) + 20, 315);
+        System.out.println(animationVScale);
+        graphics.drawLine((int)(animationVScale * .0001) + 30, 300, (int)(animationVScale * .0001) + 30, 295);
+        graphics.drawString("100", (int)(animationVScale * .0001) + 20, 315);
+        graphics.drawLine((int)(animationVScale * .0002) + 30, 300, (int)(animationVScale * .0002) + 30, 295);
+        graphics.drawString("200", (int)(animationVScale * .0002) + 20, 315);
+        graphics.drawLine((int)(animationVScale * .0005) + 30, 300, (int)(animationVScale * .0005) + 30, 295);
+        graphics.drawString("500", (int)(animationVScale * .0005) + 20, 315);
         //
         //region Calculate Snapshots
         LinkedList<Snapshot> temporaryList = new LinkedList<>();
@@ -304,16 +389,61 @@ public class Main extends Application {
         GraphicsContext graphics = diagramCanvas.getGraphicsContext2D();
         graphics.drawImage(animationDiagram, 0, 0);
         graphics.setFill(Color.rgb(0, 141, 255, 0.502));
-        graphics.fillOval(animationTrace[animationState].X - animationCircleSize / 2, animationTrace[animationState].Y - animationCircleSize / 2, animationCircleSize, animationCircleSize);
+        graphics.fillOval(animationTrace[animationState].X - animationCircleSize / 2,
+                animationTrace[animationState].Y - animationCircleSize / 2,
+                animationCircleSize,
+                animationCircleSize);
         graphics.setFill(Color.rgb(0, 0, 255));
         graphics.setLineWidth(2);
-        graphics.strokeOval(animationTrace[animationState].X - animationCircleSize / 2, animationTrace[animationState].Y - animationCircleSize / 2, animationCircleSize, animationCircleSize);
+        graphics.strokeOval(animationTrace[animationState].X - animationCircleSize / 2,
+                animationTrace[animationState].Y - animationCircleSize / 2,
+                animationCircleSize,
+                animationCircleSize);
+        //
+        infoDynamic.getEngine().loadContent("" +
+                "<html><style rel=\"stylesheet\" type=\"text/css\">" +
+                "html { " +
+                "background: transparent; " +
+                "margin: 0; " +
+                "padding: 5px; " +
+                "font-size: 1.05em; " +
+                "font-family: Roboto, Arial; " +
+                "line-height: 1.3em; " +
+                "} " +
+                "html * { " +
+                "background: transparent; " +
+                "margin: 0; " +
+                "padding: 0; " +
+                "line-height: 1.5em; " +
+                "}" +
+                "</style>" +
+                "<p>" +
+                "p = " + (double) Math.round(animationTrace[animationState].pressure * 1000) / 1000 + "MPa<br>" +
+                "V = " + (double) Math.round(animationTrace[animationState].volume * 1000000) + " cm<sup>3</sup><br>" +
+                "T = " + (double) Math.round(animationTrace[animationState].temp * 1000) / 1000 + " K<br>");
+        //
         animationState+=30;
         if (animationState >= animationTrace.length) animationState = 0;
     };
 
     private static String fillOutput(Calculation calculation) {
-        return "<html><style rel=\"stylesheet\" type=\"text/css\">html { background: transparent; margin: 0; padding: 5px; font-size: 1.05em; font-family: Roboto, Arial; line-height: 1.3em; } html * { background: transparent; margin: 0; padding: 0; line-height: 1.5em; }</style><p>" +
+        return "<html><style rel=\"stylesheet\" type=\"text/css\">" +
+                "html { " +
+                "background: transparent; " +
+                "margin: 0; " +
+                "padding: 5px; " +
+                "font-size: 1.05em; " +
+                "font-family: Roboto, Arial; " +
+                "line-height: 1.3em; " +
+                "} " +
+                "html * { " +
+                "background: transparent; " +
+                "margin: 0; " +
+                "padding: 0; " +
+                "line-height: 1.5em; " +
+                "}" +
+                "</style>" +
+                "<p>" +
                 "r = " + (double)Math.round(calculation.compressionRatio * 1000) / 1000 + "<br>" +
                 "c<sub>V</sub> = 0.72 kJ&times;kg<sup>-1</sup>&times;K<sup>-1</sup><br>" +
                 "&rho; = 1.29 kg × m<sup>3</sup><br>" +
@@ -328,7 +458,14 @@ public class Main extends Application {
                 "P = " + (double)Math.round(calculation.power * 1000) / 1000 + " kW</p></html>";
     }
 
-    public static Calculation calculate(double volume2, double volume3, double temperature2, double pressure2, double heatValue, double airFuelRatio, int rpm, int cylinderCount) {
+    public static Calculation calculate(double volume2,
+                                        double volume3,
+                                        double temperature2,
+                                        double pressure2,
+                                        double heatValue,
+                                        double airFuelRatio,
+                                        int rpm,
+                                        int cylinderCount) {
         Calculation calculation = new Calculation();
         calculation.compressionRatio = volume2 / volume3;
         //
