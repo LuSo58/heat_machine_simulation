@@ -41,7 +41,7 @@ public class Main extends Application {
         CylinderCount,
     }
     public static final double airHeatCapacity = 0.72;
-    public static final double airDensity = 1.29;
+//    public static final double airDensity = 1.29;
     public static final double specificHeatRatioAir = 1.4;
     public static final double specificHeatRatioCO2 = 1.6666666666666667;
 
@@ -105,6 +105,11 @@ public class Main extends Application {
     private Button buttonStart;
     private Button buttonStop;
     private Button buttonPause;
+    //
+    private Image pistonImageWall;
+    private Image pistonValveLeft;
+    private Image pistonValveRight;
+//    private Image pistonImageWall;
     //
     private final Spinner[] spinners = new Spinner[8] ;
     private final WebView infoOutput = new WebView();
@@ -230,11 +235,17 @@ public class Main extends Application {
         diagramPlaceholder = new Image(this.getClass().getResourceAsStream("/diagram_diesel.png"));
         diagramCanvas.getGraphicsContext2D().drawImage(diagramPlaceholder, 0, 0);
         //
-        pistonCanvas = new Canvas(330, 330);
-        pistonCanvas.getGraphicsContext2D().setFill(new Color(0, 0, 0, 1));
-        pistonCanvas.getGraphicsContext2D().fillRect(0, 0, 330, 330);
+//        pistonCanvas = new Canvas(330, 330);
+//        pistonCanvas.getGraphicsContext2D().setFill(new Color(0, 0, 0, 1));
+//        pistonCanvas.getGraphicsContext2D().fillRect(0, 0, 330, 330);
+//        //
+//        pistonImageWall = new Image(this.getClass().getResourceAsStream("/piston_wall.png"));
+//        pistonValveLeft = new Image(this.getClass().getResourceAsStream("/piston_valve_left.png"));
+//        pistonValveRight = new Image(this.getClass().getResourceAsStream("/piston_valve_right.png"));
+//
+//        pistonCanvas.getGraphicsContext2D().drawImage(pistonImageWall, 68.75, 36);
         //
-        vBox.getChildren().addAll(diagramCanvas, pistonCanvas);
+        vBox.getChildren().addAll(diagramCanvas/*, pistonCanvas*/);
         //
         assert animate != null;
         timeline = new Timeline(new KeyFrame(Duration.millis(30), animate));
@@ -307,7 +318,6 @@ public class Main extends Application {
         graphics.drawLine(30, 300 - (int)animationPScale * 15, 35, 300 - (int)animationPScale * 15);
         graphics.drawString("15", 5, 300 - ((int)animationPScale * 15) + 5);
         //
-        System.out.println(animationVScale);
         graphics.drawLine((int)(animationVScale * .0001) + 30, 300, (int)(animationVScale * .0001) + 30, 295);
         graphics.drawString("100", (int)(animationVScale * .0001) + 20, 315);
         graphics.drawLine((int)(animationVScale * .0002) + 30, 300, (int)(animationVScale * .0002) + 30, 295);
@@ -507,7 +517,7 @@ public class Main extends Application {
         }
         work *= frac * 1000;
         calculation.work = work;
-        calculation.power = work * rpm / 60 * cylinderCount;
+        calculation.power = work * rpm / 120 * cylinderCount;
         //
         return calculation;
     }
