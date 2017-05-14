@@ -24,6 +24,8 @@ import javafx.util.StringConverter;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.LinkedList;
 //
 @SuppressWarnings("WeakerAccess")
@@ -45,6 +47,7 @@ public class Main extends Application {
     public static final double specificHeatRatioAir = 1.4;
     public static final double specificHeatRatioCO2 = 1.6666666666666667;
 
+    //region Some Things
     public static final String[] heatMachineInputsShorts = new String[]{
             "V₂",
             "V₃",
@@ -95,6 +98,7 @@ public class Main extends Application {
             100,
             1,
     };
+    //endregion
     @SuppressWarnings("SpellCheckingInspection")
     public static final double frac = .0000001;
     public static int samples;
@@ -106,10 +110,7 @@ public class Main extends Application {
     private Button buttonStop;
     private Button buttonPause;
     //
-    private Image pistonImageWall;
-    private Image pistonValveLeft;
-    private Image pistonValveRight;
-//    private Image pistonImageWall;
+    private Image[] pistonImages;
     //
     private final Spinner[] spinners = new Spinner[8] ;
     private final WebView infoOutput = new WebView();
@@ -235,17 +236,24 @@ public class Main extends Application {
         diagramPlaceholder = new Image(this.getClass().getResourceAsStream("/diagram_diesel.png"));
         diagramCanvas.getGraphicsContext2D().drawImage(diagramPlaceholder, 0, 0);
         //
-//        pistonCanvas = new Canvas(330, 330);
-//        pistonCanvas.getGraphicsContext2D().setFill(new Color(0, 0, 0, 1));
-//        pistonCanvas.getGraphicsContext2D().fillRect(0, 0, 330, 330);
-//        //
-//        pistonImageWall = new Image(this.getClass().getResourceAsStream("/piston_wall.png"));
-//        pistonValveLeft = new Image(this.getClass().getResourceAsStream("/piston_valve_left.png"));
-//        pistonValveRight = new Image(this.getClass().getResourceAsStream("/piston_valve_right.png"));
-//
-//        pistonCanvas.getGraphicsContext2D().drawImage(pistonImageWall, 68.75, 36);
+        pistonCanvas = new Canvas(330, 330);
+        pistonCanvas.getGraphicsContext2D().setFill(new Color(0, 0, 0, 1));
+        pistonCanvas.getGraphicsContext2D().fillRect(0, 0, 330, 330);
         //
-        vBox.getChildren().addAll(diagramCanvas/*, pistonCanvas*/);
+        {
+            ArrayList<Image> temp = new ArrayList<>();
+            for (int i = 0;; i++) {
+                try {
+                    temp.add(new Image(this.getClass().getResourceAsStream(String.format("/piston/%03d.jpeg", i))));
+                } catch (Exception ex) {
+                    break;
+                }
+            }
+            pistonImages = temp.toArray(new Image[0]);
+        }
+        pistonCanvas.getGraphicsContext2D().drawImage(pistonImages[0], 0, 0);
+        //
+        vBox.getChildren().addAll(diagramCanvas, pistonCanvas);
         //
         assert animate != null;
         timeline = new Timeline(new KeyFrame(Duration.millis(30), animate));
@@ -396,19 +404,26 @@ public class Main extends Application {
     }
 
     private EventHandler<ActionEvent> animate = event -> {
-        GraphicsContext graphics = diagramCanvas.getGraphicsContext2D();
-        graphics.drawImage(animationDiagram, 0, 0);
-        graphics.setFill(Color.rgb(0, 141, 255, 0.502));
-        graphics.fillOval(animationTrace[animationState].X - animationCircleSize / 2,
-                animationTrace[animationState].Y - animationCircleSize / 2,
-                animationCircleSize,
-                animationCircleSize);
-        graphics.setFill(Color.rgb(0, 0, 255));
-        graphics.setLineWidth(2);
-        graphics.strokeOval(animationTrace[animationState].X - animationCircleSize / 2,
-                animationTrace[animationState].Y - animationCircleSize / 2,
-                animationCircleSize,
-                animationCircleSize);
+        {
+            GraphicsContext graphics = diagramCanvas.getGraphicsContext2D();
+            graphics.drawImage(animationDiagram, 0, 0);
+            graphics.setFill(Color.rgb(0, 141, 255, 0.502));
+            graphics.fillOval(animationTrace[animationState].X - animationCircleSize / 2,
+                    animationTrace[animationState].Y - animationCircleSize / 2,
+                    animationCircleSize,
+                    animationCircleSize);
+            graphics.setFill(Color.rgb(0, 0, 255));
+            graphics.setLineWidth(2);
+            graphics.strokeOval(animationTrace[animationState].X - animationCircleSize / 2,
+                    animationTrace[animationState].Y - animationCircleSize / 2,
+                    animationCircleSize,
+                    animationCircleSize);
+        }
+        //
+        {
+            GraphicsContext graphics = pistonCanvas.getGraphicsContext2D();
+            graphics.drawImage(pistonImages[(int)((double)animationState * pistonImages.length / animationTrace.length)], 0, 0);
+        }
         //
         infoDynamic.getEngine().loadContent("" +
                 "<html><style rel=\"stylesheet\" type=\"text/css\">" +
